@@ -1,5 +1,37 @@
+import { Worker } from 'worker_threads';
+import path from 'path';
+import os from 'os';
+
+const createWorkers = async (numWorkers) => {
+  const currentFilePath = new URL(import.meta.url).pathname;
+  const currentDir = path.dirname(currentFilePath);
+  const workers = [];
+
+  for (let i = 0; i < numWorkers; i++) {
+    const workerFilePath = path.join(currentDir, 'worker.js');
+    const worker = new Worker(workerFilePath, { workerData: 10 + i });
+    workers.push(worker);
+  }
+
+  return workers;
+};
+
 const performCalculations = async () => {
-    // Write your code here
+  const numThreads = os.cpus().length;
+  const workers = await createWorkers(numThreads);
+
+  const results = await Promise.allSettled(
+    workers.map((worker) => {
+      return new Promise((resolve) => {
+        worker.on('message', (result) => {
+          resolve(result);
+        });
+      });
+    })
+  );
+
+  console.log('Results:');
+  console.log(results.map((result, index) => ({ status: result.status, data: result.status === 'fulfilled' ? result.value : null })));
 };
 
 await performCalculations();
