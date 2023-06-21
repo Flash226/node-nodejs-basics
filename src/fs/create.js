@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -11,15 +11,19 @@ const create = async () => {
   const fileContent = 'I am fresh and young';
 
   try {
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath);
-    }
+    await fs.mkdir(folderPath, { recursive: true });
 
-    if (fs.existsSync(filePath)) {
+    try {
+      await fs.access(filePath);
       throw new Error('Error: File already exists');
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        await fs.writeFile(filePath, fileContent);
+        console.log('File created successfully!');
+      } else {
+        throw err;
+      }
     }
-
-    await fs.promises.writeFile(filePath, fileContent);
   } catch (err) {
     console.error('FS operation failed:', err.message);
   }

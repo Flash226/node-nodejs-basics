@@ -21,7 +21,7 @@ const performCalculations = async () => {
       const numThreads = os.cpus().length;
       const workers = await createWorkers(numThreads);
   
-      const results = await Promise.allSettled(
+      const results = await Promise.all(
         workers.map((worker) => {
           return new Promise((resolve) => {
             worker.on('message', (result) => {

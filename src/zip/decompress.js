@@ -7,16 +7,20 @@ import { promisify } from 'util';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const gunzipAsync = promisify(zlib.gunzip);
-
-const decompress = async () => {
+const decompress = () => {
   const compressedFilePath = path.join(__dirname, 'files', 'archive.gz');
   const decompressedFilePath = path.join(__dirname, 'files', 'fileToCompress.txt');
 
-  const compressedData = fs.readFileSync(compressedFilePath);
-  const decompressedData = await gunzipAsync(compressedData);
+  const readStream = fs.createReadStream(compressedFilePath);
+  const writeStream = fs.createWriteStream(decompressedFilePath);
+  const gunzipStream = zlib.createGunzip();
 
-  fs.writeFileSync(decompressedFilePath, decompressedData);
+  readStream.pipe(gunzipStream).pipe(writeStream);
+
+  return new Promise((resolve, reject) => {
+    writeStream.on('finish', resolve);
+    writeStream.on('error', reject);
+  });
 };
 
 await decompress();
