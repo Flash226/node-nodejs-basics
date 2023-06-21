@@ -17,21 +17,28 @@ const createWorkers = async (numWorkers) => {
 };
 
 const performCalculations = async () => {
-  const numThreads = os.cpus().length;
-  const workers = await createWorkers(numThreads);
+  try {
+    const numThreads = os.cpus().length;
+    const workers = await createWorkers(numThreads);
 
-  const results = await Promise.allSettled(
-    workers.map((worker) => {
-      return new Promise((resolve) => {
-        worker.on('message', (result) => {
-          resolve(result);
+    const results = await Promise.allSettled(
+      workers.map((worker) => {
+        return new Promise((resolve) => {
+          worker.on('message', (result) => {
+            resolve(result);
+          });
+          worker.on('error', (error) => {
+            resolve({ status: 'error', data: null });
+          });
         });
-      });
-    })
-  );
+      })
+    );
 
-  console.log('Results:');
-  console.log(results.map((result, index) => ({ status: result.status, data: result.status === 'fulfilled' ? result.value : null })));
+    console.log('Results:');
+    console.log(results.map((result, index) => ({ status: result.status, data: result.status === 'fulfilled' ? result.value : null })));
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
 };
 
 await performCalculations();
