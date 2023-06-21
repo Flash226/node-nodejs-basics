@@ -3,7 +3,8 @@ import { Transform } from 'stream';
 const transform = async () => {
   const passthroughTransform = new Transform({
     transform(chunk, encoding, callback) {
-      this.push(chunk.toString());
+      const reversedChunk = chunk.toString().split('').reverse().join('');
+      this.push(reversedChunk);
       callback();
     }
   });
