@@ -1,9 +1,8 @@
-import path from 'path';
 import { release, version } from 'os';
 import { createServer } from 'http';
-import fs from 'fs';
+import path from 'path';
 
-const __filename = path.basename(import.meta.url);
+const __filename = path.basename(new URL(import.meta.url).pathname);
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 console.log(`Release ${release()}`);
@@ -15,36 +14,18 @@ console.log(`Path to current directory is ${__dirname}`);
 
 const random = Math.random();
 
-let unknownObject;
-
-const readFileAsync = (filePath) => {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-};
-
 const readFiles = async () => {
-  const filePathA = path.join(__dirname, 'files', 'a.json');
-  const filePathB = path.join(__dirname, 'files', 'b.json');
+  const filePathA = new URL('./files/a.json', import.meta.url);
+  const filePathB = new URL('./files/b.json', import.meta.url);
 
   try {
-    const fileContentA = await readFileAsync(filePathA);
-    const fileContentB = await readFileAsync(filePathB);
+    const moduleA = await import(filePathA.href, { assert: { type: 'json' } });
+    const moduleB = await import(filePathB.href, { assert: { type: 'json' } });
 
-    const objectA = JSON.parse(fileContentA);
-    const objectB = JSON.parse(fileContentB);
+    const objectA = moduleA.default;
+    const objectB = moduleB.default;
 
-    if (random > 0.5) {
-      unknownObject = objectA;
-    } else {
-      unknownObject = objectB;
-    }
+    const unknownObject = random > 0.5 ? objectA : objectB;
 
     console.log(unknownObject);
   } catch (err) {
@@ -64,5 +45,3 @@ myServer.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
   console.log('To terminate it, use Ctrl+C combination');
 });
-
-export { unknownObject, myServer };
